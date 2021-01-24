@@ -1,0 +1,425 @@
+import "UnityEngine"
+
+local knapsackSys = {}
+
+function newgoods(name,count,info)
+    local gds = {}
+    gds.name = name
+    gds.count = count
+    gds.info = info
+    return gds
+end
+
+
+function main()
+    knapsackSys.goodsList = {}
+    knapsackSys.knapsackWindow = GameObject.Find("Canvas/KnapsackWindow")
+    knapsackSys:init()
+    return knapsackSys
+end
+function knapsackSys:init()
+    knapsackSys:loadGoods()
+    knapsackSys:addGoodsEvent_debug()
+    knapsackSys.resSys = GameObject.Find("GameRoot"):GetComponent("ResSys")
+    knapsackSys.toolSys = GameObject.Find("GameRoot"):GetComponent("ToolSys")
+    knapsackSys.gameRoot = GameObject.Find("GameRoot"):GetComponent("GameRoot")
+    knapsackSys.content = GameObject.Find("Canvas").transform:Find("KnapsackWindow/Scroll View/Viewport/Content")
+    knapsackSys.gridLayoutGroup = knapsackSys.content:GetComponent("GridLayoutGroup")
+    knapsackSys.goodsItemList = {}
+    knapsackSys.selectCount = 0 -- 选择的物品个数
+    knapsackSys:Open(true)
+end
+
+function knapsackSys:Open(state)
+    --knapsackSys.knapsackWindow:setActive(state)
+    if state then
+        knapsackSys:refresh()
+    end
+end
+
+function knapsackSys:loadGoods()
+    local goods1 = newgoods("改名卡",1,"可以更改一次名字")
+    table.insert(knapsackSys.goodsList,goods1)
+
+    local goods2 = newgoods("金币卡",5,"增加500金币")
+    table.insert(knapsackSys.goodsList,goods2)
+
+    local goods3 = newgoods("桃子",10,"恢复100血量")
+    table.insert(knapsackSys.goodsList,goods3)
+    
+    local goods4 = newgoods("小刀",1,"增加50的攻击力")
+    table.insert(knapsackSys.goodsList,goods4)
+end
+
+
+function knapsackSys:refresh()
+    -- 加载当前背包内的物品
+    print("加载当前背包内的物品")
+    knapsackSys:clearAllItem()
+    -- 显示到界面上
+    knapsackSys:showItem()
+    -- 设置content高度
+    knapsackSys:setContentHeight()
+
+
+    --local c=coroutine.create(function()
+    --    Yield(WaitForEndOfFrame())
+    --end)
+    --coroutine.resume(c)
+
+    print("显示到界面上")
+end
+
+function knapsackSys:setContentHeight()
+    local length = #knapsackSys.goodsList
+    -- 方法一未成功
+    --print(length)
+    --local row = math.ceil( length / 5);
+    --local rectTrans = knapsackSys.content:GetComponent("RectTransform")
+    --rectTrans.sizeDelta = Vector2(knapsackSys.content.sizeDelta.x,row * knapsackSys.gridLayoutGroup.cellSize.y + (row-1) * knapsackSys.gridLayoutGroup.spacing.y)
+    --print(row * knapsackSys.gridLayoutGroup.cellSize.y + (row-1) * knapsackSys.gridLayoutGroup.spacing.y)
+    
+    -- 方法二   调用C# 函数
+    knapsackSys.gameRoot:SetContentHeight(length)
+    
+end
+
+function knapsackSys:showItem()
+    for k,v in pairs(knapsackSys.goodsList)  do
+        
+        -- 加载预制体
+        local item = Resources.Load("item")
+        -- 实例化 item
+        item = GameObject.Instantiate(item,Vector3.zero,Quaternion.identity)
+        item.transform:SetParent(GameObject.Find("Content").transform)
+        -- 获得img组件
+        local img = item.transform:Find("img"):GetComponent(UI.Image)
+        -- 设置title
+        local titleText = item.transform:Find("title"):GetComponent(UI.Text)
+        titleText.text = v.name
+        -- 设置个数
+        local countText = item.transform:Find("count"):GetComponent(UI.Text)
+        countText.text = v.count
+
+        if(v.name == "改名卡") then
+            -- 设置图片
+            local picture =knapsackSys.resSys:ResourcesSprite("imgs/renamecard")
+            img.sprite = picture
+            -- 获得按钮组件
+            local btn = item:GetComponent(UI.Button)
+            -- 添加点击事件
+            btn.onClick:AddListener(function()
+                print("点击了"..v.name)
+                local renameinput = Resources.Load("renameInput")
+                renameinput = GameObject.Instantiate(renameinput,knapsackSys.knapsackWindow.transform)
+                -- 注册监听
+                local cancelBtn = renameinput.transform:Find("bg/cancelButton"):GetComponent(UI.Button)
+                cancelBtn.onClick:AddListener(function ()
+                    GameObject.Destroy(renameinput)
+                end)
+                local deteminBtn = renameinput.transform:Find("bg/deteminButton"):GetComponent(UI.Button)
+                deteminBtn.onClick:AddListener(function ()
+                    -- 判断输入框是否为空
+                    local flag = true
+                    local inputname = renameinput.transform:Find("bg/nameinput"):GetComponent(UI.InputField)
+                    if inputname.text == "" then
+                        flag = false
+                        knapsackSys:showTip("用户名不合法")
+                    end
+                    if flag then
+                        -- 提示修改成功
+                        knapsackSys:showTip("修改成功")
+                        -- 刷新背包
+                        knapsackSys.useGoods(nil,v.name,1)
+                        -- 关闭窗口
+                        GameObject.Destroy(renameinput)
+                    end
+                end)
+            end )
+        elseif(v.name == "金币卡")then
+            -- 设置图片
+            local picture =knapsackSys.resSys:ResourcesSprite("imgs/金币")
+            img.sprite = picture
+            -- 获得按钮组件
+            local btn = item:GetComponent(UI.Button)
+            -- 添加点击事件
+            btn.onClick:AddListener(function()
+                print("点击了"..v.name)
+                -- todo 
+                knapsackSys:showUseWindow(v.name,v.count,v.info,picture)
+            end )
+        elseif(v.name == "桃子") then
+            -- 设置图片
+            local picture = knapsackSys.resSys:ResourcesSprite("imgs/桃子")
+            img.sprite = picture
+            -- 获得按钮组件
+            local btn = item:GetComponent(UI.Button)
+            -- 添加点击事件
+            btn.onClick:AddListener(function()
+                print("点击了"..v.name)
+                knapsackSys:showUseWindow(v.name,v.count,v.info,picture)
+
+            end )
+        elseif(v.name == "小刀")then
+            -- 设置图片
+            img.sprite = knapsackSys.resSys:ResourcesSprite("imgs/小刀")
+            -- 获得按钮组件
+            local btn = item:GetComponent(UI.Button)
+            -- 添加点击事件
+            btn.onClick:AddListener(function()
+                print("点击了"..v.name)
+                -- 提示
+                knapsackSys:showTip(v.name.."装备成功")
+                -- 刷新背包
+                knapsackSys.useGoods(nil,v.name,1)
+            end )
+        else
+            -- 随机的物品
+            -- 设置图片
+            local imgres =  knapsackSys.resSys:ResourcesSprite("imgs/lua")
+            img.sprite = imgres
+            -- 获得按钮组件
+            local btn = item:GetComponent(UI.Button)
+            -- 添加点击事件
+            btn.onClick:AddListener(function()
+                print("点击了"..v.name)
+                ---- 提示
+                --knapsackSys:showTip(v.name.."阅读完成")
+                ---- 刷新背包
+                --knapsackSys.useGoods(nil,v.name,1)
+                knapsackSys:showUseWindow(v.name,v.count,v.info,imgres)
+            end )
+            
+            
+        end
+
+            table.insert(knapsackSys.goodsItemList,item)
+        end
+end
+
+function knapsackSys:showUseWindow(name,count,info,img)
+    -- 加载窗口预制体
+    local window = Resources.Load("UseGoodsWindow")
+    print(window)
+    -- 实例化
+    window = GameObject.Instantiate(window,knapsackSys.knapsackWindow.transform)
+    -- 注册窗口关闭事件
+    local closeBtn = window:GetComponent(UI.Button)
+    closeBtn.onClick:AddListener(function ()
+        GameObject.Destroy(window)
+    end)
+    -- 将标题，图片，介绍显示
+    local title = window.transform:Find("window/title"):GetComponent(UI.Text)
+    title.text = name
+
+    local image = window.transform:Find("window/img"):GetComponent(UI.Image)
+    image.sprite = img
+    
+    local infotext = window.transform:Find("window/infor"):GetComponent(UI.Text)
+    infotext.text = info
+    
+    -- 选择的个数  默认个数为1
+    local selectCount = window.transform:Find("window/selectCount"):GetComponent(UI.Text)
+    knapsackSys.selectCount = 1
+    
+    -- 设置进度 默认为1 设置最大个数
+    local slider = window.transform:Find("window/Slider"):GetComponent(UI.Slider)
+    local maxCountText = window.transform:Find("window/Slider/MaxCountText"):GetComponent(UI.Text)
+    maxCountText.text = tostring(count) 
+    
+    -- 给进度条添加监听
+    slider.onValueChanged:AddListener(function (value) 
+        local prog = value
+        if prog <= 0 then
+            prog = 0.1
+        end
+        knapsackSys.selectCount =  math.ceil(prog * count)
+        selectCount.text = tostring(knapsackSys.selectCount)
+    end)
+    
+    
+    -- 注册确定按钮事件
+    local determineBtn = window.transform:Find("window/DetemineBtn"):GetComponent(UI.Button)
+    determineBtn.onClick:AddListener(function ()
+        print("使用了"..knapsackSys.selectCount.."个"..name)
+        -- 提示信息
+        knapsackSys:showTip("使用了"..knapsackSys.selectCount.."个"..name)
+        knapsackSys:useGoods(name,knapsackSys.selectCount)
+        -- 关闭界面
+        GameObject.Destroy(window)
+    end)
+end
+
+
+function knapsackSys:useGoods(name,count)
+    for k,v in pairs(knapsackSys.goodsList)do
+        print(k..v.name.."---"..name)
+        if(v.name == name and count <= v.count)then
+            knapsackSys.goodsList[k].count = v.count - count
+            if(v.count <= 0) then
+                -- 清除数据
+                table.remove(knapsackSys.goodsList,k)
+            end
+            -- 刷新界面
+            knapsackSys.refresh()
+            print("使用")
+            break
+        end
+    end
+end
+
+
+function knapsackSys:clearItem(item)
+    for k,v in pairs(knapsackSys.goodsItemList) do
+        if(item == v)then
+            GameObject.Destroy(item)
+            table.remove(knapsackSys.goodsItemList,k)
+            break
+        end
+    end
+end
+
+function knapsackSys:clearAllItem()
+    for k,v in pairs(knapsackSys.goodsItemList) do
+        GameObject.Destroy(v)
+    end
+    knapsackSys.goodsItemList = {}
+end
+
+function knapsackSys:update(self)
+
+   -- print("update")
+
+end
+
+function knapsackSys:showTip(showinfor)
+    local tip = Resources.Load("tip")
+    tip = GameObject.Instantiate(tip,GameObject.Find("Canvas").transform)
+    local tiptext =  tip.transform:Find("Text"):GetComponent(UI.Text)
+    tiptext.text = showinfor
+    local c =coroutine.create(function()
+        Yield(WaitForSeconds(1))
+        GameObject.Destroy(tip)
+    end)
+    coroutine.resume(c)
+end
+
+-- debug  按钮点击增加物品
+function knapsackSys:addGoodsEvent_debug()
+    -- 注册事件
+    local debugwindow = GameObject.Find("Canvas/DebugWindow").transform
+
+
+    local RDBtn = debugwindow:Find("RDButton"):GetComponent(UI.Button)
+    RDBtn.onClick:AddListener(function ()
+        local name = "lua程序设计" .. math.floor(math.random() * 100)
+        local count = math.ceil(math.random()* 10)
+        local infor = "介绍"..name.."的书"
+        local isExit = false
+        for k,v in pairs(knapsackSys.goodsList) do
+            if(v.name == name) then
+                knapsackSys.goodsList[k].count = v.count + count
+                isExit = true
+            end
+        end
+        if not isExit then
+            local goods = newgoods(name,count,infor)
+            table.insert(knapsackSys.goodsList,goods)
+        end
+        -- 提示信息
+        knapsackSys:showTip("获得 "..name.."*"..count)
+        -- 刷新界面
+        knapsackSys:refresh()
+    end)
+    
+    
+
+    local TZBtn = debugwindow:Find("TZButton"):GetComponent(UI.Button)
+    TZBtn.onClick:AddListener(function ()
+        local isAdd = false
+        for k,v in pairs(knapsackSys.goodsList) do
+            if(v.name == "桃子") then
+                knapsackSys.goodsList[k].count = v.count + 1
+                isAdd = true
+                break
+            end
+        end
+        if not isAdd then
+            local goods3 = newgoods("桃子",1,"恢复100血量")
+            table.insert(knapsackSys.goodsList,goods3)
+        end
+        -- 提示信息
+        knapsackSys:showTip("获得 桃子".."*"..1)
+        -- 刷新界面
+        knapsackSys:refresh()
+    end)
+
+    local XDBtn = debugwindow:Find("XDButton"):GetComponent(UI.Button)
+    XDBtn.onClick:AddListener(function ()
+        local isAdd = false
+        for k,v in pairs(knapsackSys.goodsList) do
+            if(v.name == "小刀") then
+                knapsackSys.goodsList[k].count = v.count + 1
+                isAdd = true
+                break
+            end
+        end
+
+        if not isAdd then
+            local goods3 = newgoods("小刀",1,"增加50的攻击力")
+            table.insert(knapsackSys.goodsList,goods3)
+        end
+        -- 提示信息
+        knapsackSys:showTip("获得 小刀".."*"..1)
+        -- 刷新界面
+        knapsackSys:refresh()
+
+    end)
+
+    local GMKBtn = debugwindow:Find("GMKButton"):GetComponent(UI.Button)
+    GMKBtn.onClick:AddListener(function ()
+        local isAdd = false
+        for k,v in pairs(knapsackSys.goodsList) do
+            if(v.name == "改名卡") then
+                knapsackSys.goodsList[k].count = v.count + 1
+                isAdd = true
+                break
+            end
+        end
+        if not isAdd then
+            local goods3 = newgoods("改名卡",1,"可以更改一次名字")
+            table.insert(knapsackSys.goodsList,goods3)
+        end
+        -- 提示信息
+        knapsackSys:showTip("获得 改名卡".."*"..1)
+        -- 刷新界面
+        knapsackSys:refresh()
+    end)
+
+    local JBKBtn = debugwindow:Find("JBKButton"):GetComponent(UI.Button)
+    JBKBtn.onClick:AddListener(function ()
+        local isAdd = false
+        for k,v in pairs(knapsackSys.goodsList) do
+            if(v.name == "金币卡") then
+                knapsackSys.goodsList[k].count = v.count + 1
+                isAdd = true
+                break
+            end
+        end
+        if not isAdd then
+            local goods3 = newgoods("金币卡",1,"增加500金币")
+            table.insert(knapsackSys.goodsList,goods3)
+        end
+        -- 提示信息
+        knapsackSys:showTip("获得 金币卡".."*"..1)
+        -- 刷新界面
+        knapsackSys:refresh()
+    end)
+end
+
+
+function knapsackSys:Test()
+    --knapsackSys:clearAllItem()
+    print("clear")
+end
+
