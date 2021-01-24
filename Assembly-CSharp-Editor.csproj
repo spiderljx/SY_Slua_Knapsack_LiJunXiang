@@ -286,10 +286,10 @@
       <HintPath>D:/English_install/unity2017/Unity/Editor/Data/PlaybackEngines/windowsstandalonesupport/UnityEditor.WindowsStandalone.Extensions.dll</HintPath>
     </Reference>
     <Reference Include="JetBrains.Rider.Unity.Editor.Plugin.Repacked">
-      <HintPath>F:/Res/unity_project/SY_Slua_Knapsack_LiJunXiang/Assets/Plugins/Editor/JetBrains/JetBrains.Rider.Unity.Editor.Plugin.Repacked.dll</HintPath>
+      <HintPath>C:/Users/admin/Desktop/test/SY_Slua_Knapsack_LiJunXiang/Assets/Plugins/Editor/JetBrains/JetBrains.Rider.Unity.Editor.Plugin.Repacked.dll</HintPath>
     </Reference>
     <Reference Include="BytesHelper">
-      <HintPath>F:/Res/unity_project/SY_Slua_Knapsack_LiJunXiang/Assets/Plugins/Slua_Managed/BytesHelper.dll</HintPath>
+      <HintPath>C:/Users/admin/Desktop/test/SY_Slua_Knapsack_LiJunXiang/Assets/Plugins/Slua_Managed/BytesHelper.dll</HintPath>
     </Reference>
     <Reference Include="UnityEditor.Advertisements">
       <HintPath>C:/Users/admin/AppData/Local/Unity/cache/packages/packages.unity.com/com.unity.ads@2.0.8/Editor/UnityEditor.Advertisements.dll</HintPath>

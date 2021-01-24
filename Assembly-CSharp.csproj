@@ -919,7 +919,7 @@
       <HintPath>D:/English_install/unity2017/Unity/Editor/Data/UnityExtensions/Unity/UnitySpatialTracking/RuntimeEditor/UnityEngine.SpatialTracking.dll</HintPath>
     </Reference>
     <Reference Include="BytesHelper">
-      <HintPath>F:/Res/unity_project/SY_Slua_Knapsack_LiJunXiang/Assets/Plugins/Slua_Managed/BytesHelper.dll</HintPath>
+      <HintPath>C:/Users/admin/Desktop/test/SY_Slua_Knapsack_LiJunXiang/Assets/Plugins/Slua_Managed/BytesHelper.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.Analytics">
       <HintPath>C:/Users/admin/AppData/Local/Unity/cache/packages/packages.unity.com/com.unity.analytics@2.0.13/UnityEngine.Analytics.dll</HintPath>
